@@ -40,7 +40,8 @@ def anchor(api, target):
 
 def pod_spec(role, settings, owner_uid, command, *, target=None, metrics_port=None):
     name = f"nador-one-way-{role}"
-    fingerprint = hashlib.sha256(json.dumps([settings["image"], command, target], sort_keys=True).encode()).hexdigest()
+    pull_secret = settings.get("image_pull_secret")
+    fingerprint = hashlib.sha256(json.dumps([settings["image"], pull_secret, command, target], sort_keys=True).encode()).hexdigest()
     annotations = {"nador-one-way-config": fingerprint}
     if metrics_port:
         annotations.update({"prometheus.io/scrape": "true", "prometheus.io/port": str(metrics_port)})
@@ -52,6 +53,8 @@ def pod_spec(role, settings, owner_uid, command, *, target=None, metrics_port=No
     }
     spec = {"restartPolicy": "Always", "automountServiceAccountToken": False,
             "terminationGracePeriodSeconds": 10, "containers": [container]}
+    if pull_secret:
+        spec["imagePullSecrets"] = [{"name": pull_secret}]
     if target:
         spec.update(nodeName=target["node"], hostPID=True, tolerations=[{"operator": "Exists"}])
         container["securityContext"] = {"privileged": True}

@@ -19,7 +19,8 @@ one_way:
     peer: 192.0.2.10
 ```
 
-Use this build tag only after the images workflow has published it.
+For a private GHCR package, set `one_way.image_pull_secret` to an
+existing registry pull Secret in the monitoring namespace.
 In `monitoring.yaml`, configure exactly one gNB or CU-UP and one UPF
 packet target, plus AMF and SMF targets for the UE mapper. Set each
 target's `n3_interface` if it differs from its packet interface. The
