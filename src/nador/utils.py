@@ -125,6 +125,8 @@ def resolve_components(model: MonitoringModel, targets: list[dict]) -> dict[str,
     if monitoring.ran_kpis and str(model.ran.implementation) not in {"oai", "ocudu"}:
         raise ValueError("RAN KPIs support OAI and OCUDU")
     enabled = {"integration", "prometheus", "grafana"}
+    if monitoring.one_way.image:
+        enabled.update(("one-way", "redis", "ue-mapper-api"))
     if monitoring.extended.node_enabled or monitoring.extended.service_enabled:
         if monitoring.extended.probe_images:
             from nador.probe_catalog import NODE_PROBES, enabled_probes
@@ -164,6 +166,8 @@ def resolve_components(model: MonitoringModel, targets: list[dict]) -> dict[str,
         )
         if name in DEFAULT_IMAGES["components"]:
             data["image"] = DEFAULT_IMAGES["components"][name].copy()
+        if name == "one-way":
+            data["image"] = DEFAULT_IMAGES["components"]["monitoring-controller"].copy()
         if name in monitoring.components:
             data = deep_merge(
                 data, monitoring.components[name].model_dump(mode="json", exclude_unset=True, exclude_none=True)

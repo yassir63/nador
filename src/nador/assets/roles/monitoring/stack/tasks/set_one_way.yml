@@ -1,0 +1,22 @@
+---
+- name: Read running one-way controller settings
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: ConfigMap
+    namespace: "{{ monitoring_namespace }}"
+    name: nador-one-way
+  register: one_way_config
+
+- name: Update requested switches without resetting other settings
+  kubernetes.core.k8s:
+    state: present
+    merge_type: [merge]
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        namespace: "{{ monitoring_namespace }}"
+        name: nador-one-way
+        resourceVersion: "{{ one_way_config.resources[0].metadata.resourceVersion }}"
+      data:
+        settings.json: "{{ (one_way_config.resources[0].data['settings.json'] | from_json | combine(one_way_settings, recursive=true)) | to_json }}"

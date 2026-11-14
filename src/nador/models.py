@@ -10,6 +10,7 @@ from orchestrator.models.k8s import ContainerImage
 from pydantic import Field, model_validator
 from nador.observability import ObservabilitySettings
 from nador.extended import ExtendedSettings
+from nador.one_way import OneWaySettings
 
 
 DEFAULT_IMAGES = json.loads((Path(__file__).parent / "assets" / "images.json").read_text())
@@ -85,6 +86,7 @@ class MonitoringDeployment(StrictBaseModel):
     ocudu_metrics_port: int = Field(default=8001, ge=1, le=65535)
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     extended: ExtendedSettings = Field(default_factory=ExtendedSettings)
+    one_way: OneWaySettings = Field(default_factory=OneWaySettings)
     targets: list[MonitoringTarget] = Field(default_factory=list)
     images: MonitoringImages = Field(default_factory=MonitoringImages)
     components: dict[str, DeployedMonitoringComponent] = Field(default_factory=dict)
@@ -112,6 +114,11 @@ class MonitoringDeployment(StrictBaseModel):
         if self.throughput and self.targets and "upf" not in {t.role for t in self.targets}:
             raise ValueError("Throughput requires a UPF packet target")
         roles = {t.role for t in self.targets}
+        if self.one_way.image and (
+            any(sum(t.role == role for t in self.targets) != 1 for role in ("gnb", "upf"))
+            or not {"amf", "smf"} <= roles
+        ):
+            raise ValueError("One-way monitoring requires one gNB and one UPF target, plus AMF and SMF targets for slice mapping")
         observation = self.observability
         if (observation.ngap or observation.mapper_coverage) and "amf" not in roles:
             raise ValueError("NGAP/mapper coverage requires an AMF target")

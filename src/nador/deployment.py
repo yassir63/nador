@@ -8,6 +8,7 @@ from orchestrator.deployment.helm import HelmManagement
 from orchestrator.utils.ansible import get_ansible_inventory_line, run_ansible_role
 
 from nador.models import MonitoringDeployment, MonitoringModel
+from nador.one_way import OneWaySettings
 from nador.utils import (
     ASSETS,
     resolve_components,
@@ -85,9 +86,10 @@ class MonitoringManagement(HelmManagement):
     # Execute a monitoring Ansible action using the selected control node.
     async def _run_tasks(
         self,
-        action: Literal["prepare", "inject_sniffers"],
+        action: Literal["prepare", "inject_sniffers", "set_one_way"],
         *,
         targets: list[dict] | None = None,
+        settings: dict | None = None,
         quiet: bool = False,
     ) -> None:
         """Run preparation or sniffer tasks using the Kubernetes master's inventory."""
@@ -106,12 +108,36 @@ class MonitoringManagement(HelmManagement):
                 "monitoring_control_node": node_name,
                 "monitoring_config": monitoring.model_dump(mode="json", exclude={"components"}),
                 "monitoring_targets": targets or [],
+                "one_way_settings": settings,
             },
             extra_params={"name": "Monitoring"},
             runner_path=str(Path(self.deployment_model.params.ansible.runner_path) / "monitoring"),
             roles_paths=[str(ASSETS / "roles"), *self.deployment_model.params.ansible.roles_paths],
             quiet=quiet,
         )
+
+    async def set_one_way(
+        self, *, n3: bool | None = None, upf_transit: bool | None = None,
+        log_samples: bool | None = None, quiet: bool = False,
+    ) -> None:
+        """Set the running controller's desired state without reinstalling the stack."""
+        monitoring = self.deployment_model.monitoring
+        data = monitoring.one_way.model_dump(mode="json")
+        if not data["image"]:
+            raise ValueError("Provision the one-way controller with one_way.image first")
+        changes = {}
+        for name, values in (
+            ("n3", {"enabled": n3, "log_samples": log_samples}),
+            ("upf_transit", {"enabled": upf_transit}),
+        ):
+            patch = {key: value for key, value in values.items() if value is not None}
+            if patch:
+                changes[name] = patch
+                data[name].update(patch)
+        if changes:
+            planned = OneWaySettings.model_validate(data)
+            await self._run_tasks("set_one_way", settings=changes, quiet=quiet)
+            monitoring.one_way = planned
 
     # Install monitoring components, then inject and start attachment sniffers.
     async def deploy(self, *, quiet: bool = False) -> None:
@@ -120,7 +146,8 @@ class MonitoringManagement(HelmManagement):
         await self._run_tasks("prepare", quiet=quiet)
         await self.install(quiet=quiet)
         if (self.deployment_model.monitoring.latency or self.deployment_model.monitoring.throughput
-                or self.deployment_model.monitoring.observability.active):
+                or self.deployment_model.monitoring.observability.active
+                or self.deployment_model.monitoring.one_way.image):
             await self._run_tasks("inject_sniffers", targets=plan["targets"], quiet=quiet)
 
     # Uninstall monitoring releases in reverse installation order.

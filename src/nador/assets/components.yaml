@@ -85,3 +85,6 @@ components:
   monitoring-controller:
     pod_selector:
     - app.kubernetes.io/instance=monitoring-controller
+  one-way:
+    pod_selector:
+    - app.kubernetes.io/name=nador-one-way

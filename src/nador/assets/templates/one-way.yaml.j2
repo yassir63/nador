@@ -1,0 +1,4 @@
+{% from '_component.yaml.j2' import settings with context %}
+{{ settings() }}
+oneWay: {{ monitoring.one_way.model_dump(mode="json") | tojson }}
+packetTargets: {{ packet_targets | tojson }}
