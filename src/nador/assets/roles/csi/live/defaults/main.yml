@@ -24,9 +24,9 @@ csi_live_refresh_s: 10
 csi_live_max_mb: 1024
 # Visualizer: a local file on the controller, else downloaded from the oai-csi-logging repository
 csi_live_visualizer_src: ""
-csi_live_visualizer_ref: csi-v3.1     # the visualizer v8.8 is not on main yet
+csi_live_visualizer_ref: csi-v3.1     # the visualizer v9.0 is not on main yet
 csi_live_visualizer_url: >-
-  https://raw.githubusercontent.com/turletti/oai-csi-logging/{{ csi_live_visualizer_ref }}/visualizer/streamlit_csi_visualizer_v8.8.py
+  https://raw.githubusercontent.com/turletti/oai-csi-logging/{{ csi_live_visualizer_ref }}/visualizer/streamlit_csi_visualizer_v9.0.py
 csi_live_pip_packages:
   - streamlit>=1.40
   - pandas>=2.0

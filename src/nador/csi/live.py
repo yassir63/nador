@@ -1,4 +1,4 @@
-"""Live CSI view (streamer + Streamlit visualizer v8.8) on a node other than the gNB node."""
+"""Live CSI view (streamer + Streamlit visualizer v9.0) on a node other than the gNB node."""
 
 import asyncio
 import atexit

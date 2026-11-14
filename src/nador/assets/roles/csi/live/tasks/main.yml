@@ -1,7 +1,7 @@
 ---
 # Live CSI view, ported from 5g_ansible roles/5g/csi_logging/tasks/live.yml (branch csi-ue-mapper,
 # 1b5a0b30). The play runs on the live host (the monitoring node, never the gNB node): a streamer
-# follows the CSI log of the gNB node over ssh, and Streamlit (visualizer v8.8, live mode) shows a
+# follows the CSI log of the gNB node over ssh, and Streamlit (visualizer v9.0, live mode) shows a
 # sliding window of it on 127.0.0.1:csi_live_port of the live host, reached with an ssh tunnel
 # (nador.csi.CsiLiveView.tunnel_command). gNB node load: one sshd session plus "tail -F" at the
 # lowest CPU/IO priority. Both nodes are in the inventory; gNB node tasks are delegated to csi_ran_host.
@@ -22,7 +22,7 @@
 - name: CSI live - paths
   ansible.builtin.set_fact:
     csi_live_file: "{{ csi_live_dir }}/{{ csi_file_name }}"
-    csi_live_viz: "{{ csi_live_dir }}/streamlit_csi_visualizer_v8.8.py"
+    csi_live_viz: "{{ csi_live_dir }}/streamlit_csi_visualizer_v9.0.py"
 
 # ------------------------------------------------------------------------------ stop
 - name: CSI live - stop streamer and viewer
